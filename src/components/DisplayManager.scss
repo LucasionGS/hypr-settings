@@ -1,0 +1,488 @@
+// DisplayManager.scss - Windows 11-style display management
+.display-manager {
+  width: 100%;
+  height: 100vh;
+  background: #f3f3f3;
+  color: #000;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+
+  .header {
+    padding: 24px 32px;
+    background: white;
+    border-bottom: 1px solid #e5e5e5;
+    
+    h1 {
+      font-size: 28px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: #000;
+    }
+    
+    p {
+      font-size: 14px;
+      margin: 0;
+      color: #666;
+    }
+  }
+
+  .content {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    background: #f3f3f3;
+  }
+
+  // Left panel - Monitor list
+  .monitor-list {
+    background: white;
+    border-right: 1px solid #e5e5e5;
+    padding: 24px;
+    overflow-y: auto;
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: #000;
+    }
+
+    .monitors {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .monitor-card {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f9f9f9;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #f5f5f5;
+        border-color: #d0d0d0;
+      }
+
+      &.selected {
+        background: #e6f3ff;
+        border-color: #0067c0;
+        box-shadow: 0 0 0 1px #0067c0;
+      }
+
+      &.disabled {
+        opacity: 0.6;
+      }
+
+      .monitor-icon {
+        width: 32px;
+        height: 32px;
+        margin-right: 12px;
+        color: #666;
+        
+        svg {
+          width: 100%;
+          height: 100%;
+        }
+      }
+
+      .monitor-info {
+        flex: 1;
+        
+        h3 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #000;
+        }
+        
+        p {
+          margin: 2px 0 0 0;
+          font-size: 12px;
+          color: #666;
+        }
+      }
+    }
+  }
+
+  // Center panel - Visual layout with draggable monitors
+  .monitor-layout {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    background: #f3f3f3;
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 24px 0;
+      color: #000;
+    }
+
+    .layout-container {
+      flex: 1;
+      position: relative;
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      min-height: 600px;
+      max-height: 800px; // Limit maximum height
+      overflow: auto; // Allow scrolling if needed
+      
+      // Add a subtle grid pattern to help with positioning
+      background-image: 
+        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      background-position: 0 0;
+      
+      // Smooth transitions for dynamic centering
+      .draggable-monitor {
+        transition: all 0.3s ease-out;
+      }
+      
+      // When dragging, disable transitions for smooth dragging
+      .draggable-monitor.dragging {
+        transition: none;
+      }
+    }
+
+    .draggable-monitor {
+      position: absolute;
+      background: #0067c0;
+      border: 2px solid #005a9e;
+      border-radius: 8px;
+      cursor: move;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+      text-align: center;
+      min-width: 120px;
+      min-height: 80px;
+      user-select: none;
+      transition: box-shadow 0.15s ease;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 103, 192, 0.3);
+      }
+
+      &.selected {
+        border-color: #ff6900;
+        box-shadow: 0 0 0 2px #ff6900;
+      }
+
+      &.disabled {
+        background: #666;
+        border-color: #555;
+        opacity: 0.7;
+      }
+
+      &.dragging {
+        z-index: 1000;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      }
+
+      .monitor-label {
+        padding: 8px;
+        line-height: 1.2;
+        
+        .monitor-name {
+          display: block;
+          font-weight: 600;
+        }
+        
+        .monitor-res {
+          display: block;
+          font-size: 10px;
+          opacity: 0.9;
+        }
+      }
+    }
+
+    .snap-preview {
+      border: 2px dashed #ff6900 !important;
+      border-radius: 8px;
+      background: rgba(255, 105, 0, 0.1);
+      animation: pulse-snap 0.6s ease-in-out infinite alternate;
+      
+      &::before {
+        content: 'Snap';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #ff6900;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+    }
+  }
+
+  // Right panel - Settings
+  .monitor-settings {
+    background: white;
+    border-left: 1px solid #e5e5e5;
+    padding: 24px;
+    overflow-y: auto;
+
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 24px 0;
+      color: #000;
+    }
+
+    .settings-section {
+      margin-bottom: 24px;
+
+      h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 12px 0;
+        color: #000;
+      }
+
+      .setting-row {
+        margin-bottom: 16px;
+
+        label {
+          display: block;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 6px;
+          color: #000;
+        }
+
+        select, input[type="number"] {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #d0d0d0;
+          border-radius: 4px;
+          background: white;
+          font-size: 14px;
+          color: #000;
+          
+          &:focus {
+            outline: none;
+            border-color: #0067c0;
+            box-shadow: 0 0 0 1px #0067c0;
+          }
+        }
+
+        .position-inputs {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+
+        .toggle-switch {
+          position: relative;
+          display: inline-block;
+          width: 48px;
+          height: 24px;
+          
+          input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            
+            &:checked + .slider {
+              background-color: #0067c0;
+              
+              &:before {
+                transform: translateX(24px);
+              }
+            }
+          }
+          
+          .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .2s;
+            border-radius: 24px;
+            
+            &:before {
+              position: absolute;
+              content: "";
+              height: 20px;
+              width: 20px;
+              left: 2px;
+              bottom: 2px;
+              background-color: white;
+              transition: .2s;
+              border-radius: 50%;
+            }
+          }
+        }
+      }
+    }
+
+    .no-selection {
+      text-align: center;
+      padding: 48px 16px;
+      color: #666;
+      
+      p {
+        font-size: 14px;
+        margin: 0;
+      }
+    }
+  }
+
+  // Bottom actions
+  .actions {
+    background: white;
+    border-top: 1px solid #e5e5e5;
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .status-text {
+      font-size: 14px;
+      color: #666;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+      
+      button {
+        padding: 8px 20px;
+        border: 1px solid #d0d0d0;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        
+        &.primary {
+          background: #0067c0;
+          color: white;
+          border-color: #0067c0;
+          
+          &:hover {
+            background: #005a9e;
+            border-color: #005a9e;
+          }
+          
+          &:active {
+            background: #004f87;
+          }
+        }
+        
+        &.secondary {
+          background: white;
+          color: #666;
+          
+          &:hover {
+            background: #f5f5f5;
+            border-color: #999;
+          }
+        }
+      }
+    }
+  }
+
+  // Loading and error states
+  .loading, .error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    background: white;
+    margin: 24px;
+    border-radius: 8px;
+    border: 1px solid #e5e5e5;
+    
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #0067c0;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    p {
+      font-size: 14px;
+      color: #666;
+      margin: 0;
+    }
+  }
+
+  .error {
+    h3 {
+      color: #d13438;
+      font-size: 16px;
+      margin: 0 0 8px 0;
+    }
+    
+    .retry-button {
+      margin-top: 16px;
+      padding: 8px 16px;
+      background: #d13438;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      
+      &:hover {
+        background: #b02a2e;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse-snap {
+  0% { 
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  100% { 
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+  .display-manager .content {
+    grid-template-columns: 280px 1fr 280px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .display-manager .content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  
+  .monitor-list, .monitor-settings {
+    border: none;
+    border-bottom: 1px solid #e5e5e5;
+  }
+}
