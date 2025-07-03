@@ -6,5 +6,5 @@ fn main() {
     // This is needed for proper rendering in Hyprland and other compositors
     std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
     
-    hypr_settings_lib::run()
+    archion_settings_lib::run()
 }

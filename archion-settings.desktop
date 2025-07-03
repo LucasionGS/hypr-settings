@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Archion Settings
+Comment=A modern settings panel for Archion with display configuration
+Exec=archion-settings
+Icon=archion-settings
+Type=Application
+Categories=Settings;System;
+StartupNotify=true
+Keywords=settings;display;monitor;configuration;hyprland;

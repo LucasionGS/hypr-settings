@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Hyprland Settings",
+  "productName": "Archion Settings",
   "version": "0.1.0",
-  "identifier": "dev.ionnet.hypr-settings",
+  "identifier": "dev.ionnet.archion-settings",
   "build": {
     "beforeDevCommand": "yarn dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Hyprland Settings",
+        "title": "Archion Settings",
         "width": 900,
         "height": 700,
         "decorations": false,

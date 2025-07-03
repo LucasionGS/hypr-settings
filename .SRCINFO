@@ -1,0 +1,19 @@
+pkgbase = archion-settings
+	pkgdesc = A modern settings panel for Archion with display configuration
+	pkgver = 0.1.0
+	pkgrel = 1
+	url = https://github.com/yourusername/archion-settings
+	arch = x86_64
+	license = MIT
+	makedepends = rust
+	makedepends = cargo
+	makedepends = nodejs
+	makedepends = npm
+	makedepends = git
+	depends = webkit2gtk
+	depends = gtk3
+	depends = libayatana-appindicator
+	source = archion-settings-0.1.0.tar.gz
+	sha256sums = SKIP
+
+pkgname = archion-settings

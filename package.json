@@ -1,9 +1,9 @@
 {
-  "name": "hypr-settings",
+  "name": "archion-settings",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "A modern settings panel for Hyprland with display configuration",
+  "description": "A modern settings panel for Archion with display configuration",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
