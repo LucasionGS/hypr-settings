@@ -17,6 +17,8 @@ export interface Monitor {
 export interface DisplaySettings {
   resolutions: string[];
   refreshRates: number[];
+  resolutionModes: Record<string, number[]>; // Maps resolution to available refresh rates
+  allModes: Array<{ resolution: string; refreshRate: number; mode: string }>; // All available modes
 }
 
 interface HyprlandContextType {
@@ -128,37 +130,114 @@ export function HyprlandProvider({ children }: HyprlandProviderProps) {
   const getDisplaySettings = useCallback((monitor: Monitor): DisplaySettings => {
     const resolutions = new Set<string>();
     const refreshRates = new Set<number>();
+    const resolutionModes: Record<string, number[]> = {};
+    const allModes: Array<{ resolution: string; refreshRate: number; mode: string }> = [];
+    
+    console.log('=== PROCESSING MONITOR DISPLAY SETTINGS ===');
+    console.log('Monitor:', monitor.name);
+    console.log('Available modes count:', monitor.availableModes?.length || 0);
+    console.log('Available modes:', monitor.availableModes);
     
     if (!monitor.availableModes || monitor.availableModes.length === 0) {
+      console.log('No available modes, using defaults');
+      const defaultRes = "1920x1080";
+      const defaultRate = 60;
       return {
-        resolutions: ["1920x1080"],
-        refreshRates: [60]
+        resolutions: [defaultRes],
+        refreshRates: [defaultRate],
+        resolutionModes: { [defaultRes]: [defaultRate] },
+        allModes: [{ resolution: defaultRes, refreshRate: defaultRate, mode: `${defaultRes}@${defaultRate}Hz` }]
       };
     }
     
-    monitor.availableModes.forEach(mode => {
-      const match = mode.match(/(\d+)x(\d+)@(\d+)Hz/);
+    monitor.availableModes.forEach((mode, index) => {
+      console.log(`Processing mode ${index + 1}/${monitor.availableModes.length}:`, mode);
+      console.log('Mode type:', typeof mode);
+      console.log('Mode length:', mode.length);
+      
+      // Try multiple regex patterns to handle different formats
+      let match = mode.match(/(\d+)x(\d+)@(\d+(?:\.\d+)?)Hz/);
+      if (!match) {
+        // Try alternative patterns
+        match = mode.match(/(\d+)x(\d+)@(\d+(?:\.\d+)?)/);
+      }
+      if (!match) {
+        match = mode.match(/(\d+)x(\d+)_(\d+(?:\.\d+)?)Hz/);
+      }
+      if (!match) {
+        match = mode.match(/(\d+)x(\d+) (\d+(?:\.\d+)?)Hz/);
+      }
+      
       if (match) {
         const width = parseInt(match[1]);
         const height = parseInt(match[2]);
-        const rate = parseInt(match[3]);
+        const rate = parseFloat(match[3]);
+        const resolution = `${width}x${height}`;
         
-        resolutions.add(`${width}x${height}`);
+        console.log('Successfully parsed:', { resolution, rate, width, height });
+        
+        resolutions.add(resolution);
         refreshRates.add(rate);
+        
+        // Group refresh rates by resolution
+        if (!resolutionModes[resolution]) {
+          resolutionModes[resolution] = [];
+        }
+        resolutionModes[resolution].push(rate);
+        
+        // Add to all modes list
+        allModes.push({
+          resolution,
+          refreshRate: rate,
+          mode
+        });
+      } else {
+        console.log('Failed to parse mode:', mode);
+        console.log('Mode as hex:', Array.from(mode).map(c => c.charCodeAt(0).toString(16)).join(' '));
       }
     });
     
-    if (resolutions.size === 0) resolutions.add("1920x1080");
-    if (refreshRates.size === 0) refreshRates.add(60);
+    // Sort refresh rates for each resolution and remove duplicates
+    Object.keys(resolutionModes).forEach(resolution => {
+      resolutionModes[resolution] = [...new Set(resolutionModes[resolution])].sort((a, b) => b - a); // Sort descending (highest first)
+    });
     
-    return {
+    if (resolutions.size === 0) {
+      console.log('No resolutions found, using defaults');
+      const defaultRes = "1920x1080";
+      const defaultRate = 60;
+      resolutions.add(defaultRes);
+      refreshRates.add(defaultRate);
+      resolutionModes[defaultRes] = [defaultRate];
+      allModes.push({ resolution: defaultRes, refreshRate: defaultRate, mode: `${defaultRes}@${defaultRate}Hz` });
+    }
+    
+    const result = {
       resolutions: Array.from(resolutions).sort((a, b) => {
         const [aWidth, aHeight] = a.split("x").map(Number);
         const [bWidth, bHeight] = b.split("x").map(Number);
         return (bWidth * bHeight) - (aWidth * aHeight);
       }),
-      refreshRates: Array.from(refreshRates).sort((a, b) => a - b)
+      refreshRates: Array.from(refreshRates).sort((a, b) => b - a), // Sort descending
+      resolutionModes,
+      allModes: allModes.sort((a, b) => {
+        // Sort by resolution (area) first, then by refresh rate
+        const [aWidth, aHeight] = a.resolution.split("x").map(Number);
+        const [bWidth, bHeight] = b.resolution.split("x").map(Number);
+        const areaDiff = (bWidth * bHeight) - (aWidth * aHeight);
+        if (areaDiff !== 0) return areaDiff;
+        return b.refreshRate - a.refreshRate;
+      })
     };
+    
+    console.log('Final display settings:');
+    console.log('- Resolutions:', result.resolutions);
+    console.log('- All refresh rates:', result.refreshRates);
+    console.log('- Resolution modes:', result.resolutionModes);
+    console.log('- All modes count:', result.allModes.length);
+    console.log('=== END PROCESSING MONITOR DISPLAY SETTINGS ===');
+    
+    return result;
   }, []);
 
   // Load monitors on mount

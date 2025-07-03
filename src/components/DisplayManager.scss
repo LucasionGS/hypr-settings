@@ -1,29 +1,29 @@
-// DisplayManager.scss - Windows 11-style display management
+// DisplayManager.scss - Windows 11-style display management (Dark Theme)
 .display-manager {
   width: 100%;
   height: 100vh;
-  background: #f3f3f3;
-  color: #000;
+  background: #202020;
+  color: #ffffff;
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   display: flex;
   flex-direction: column;
 
   .header {
     padding: 24px 32px;
-    background: white;
-    border-bottom: 1px solid #e5e5e5;
+    background: #2d2d2d;
+    border-bottom: 1px solid #404040;
     
     h1 {
       font-size: 28px;
       font-weight: 600;
       margin: 0 0 8px 0;
-      color: #000;
+      color: #ffffff;
     }
     
     p {
       font-size: 14px;
       margin: 0;
-      color: #666;
+      color: #cccccc;
     }
   }
 
@@ -31,13 +31,13 @@
     flex: 1;
     display: grid;
     grid-template-columns: 320px 1fr 320px;
-    background: #f3f3f3;
+    background: #202020;
   }
 
   // Left panel - Monitor list
   .monitor-list {
-    background: white;
-    border-right: 1px solid #e5e5e5;
+    background: #2d2d2d;
+    border-right: 1px solid #404040;
     padding: 24px;
     overflow-y: auto;
 
@@ -45,7 +45,7 @@
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 16px 0;
-      color: #000;
+      color: #ffffff;
     }
 
     .monitors {
@@ -58,21 +58,21 @@
       display: flex;
       align-items: center;
       padding: 12px 16px;
-      background: #f9f9f9;
-      border: 1px solid #e5e5e5;
+      background: #3a3a3a;
+      border: 1px solid #505050;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.15s ease;
 
       &:hover {
-        background: #f5f5f5;
-        border-color: #d0d0d0;
+        background: #404040;
+        border-color: #606060;
       }
 
       &.selected {
-        background: #e6f3ff;
-        border-color: #0067c0;
-        box-shadow: 0 0 0 1px #0067c0;
+        background: #0f2027;
+        border-color: #0078d4;
+        box-shadow: 0 0 0 1px #0078d4;
       }
 
       &.disabled {
@@ -83,7 +83,7 @@
         width: 32px;
         height: 32px;
         margin-right: 12px;
-        color: #666;
+        color: #cccccc;
         
         svg {
           width: 100%;
@@ -98,13 +98,13 @@
           margin: 0;
           font-size: 14px;
           font-weight: 600;
-          color: #000;
+          color: #ffffff;
         }
         
         p {
           margin: 2px 0 0 0;
           font-size: 12px;
-          color: #666;
+          color: #cccccc;
         }
       }
     }
@@ -115,20 +115,20 @@
     padding: 24px;
     display: flex;
     flex-direction: column;
-    background: #f3f3f3;
+    background: #202020;
 
     h2 {
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 24px 0;
-      color: #000;
+      color: #ffffff;
     }
 
     .layout-container {
       flex: 1;
       position: relative;
-      background: white;
-      border: 1px solid #e5e5e5;
+      background: #2d2d2d;
+      border: 1px solid #404040;
       border-radius: 8px;
       min-height: 600px;
       max-height: 800px; // Limit maximum height
@@ -136,8 +136,8 @@
       
       // Add a subtle grid pattern to help with positioning
       background-image: 
-        linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
       background-size: 50px 50px;
       background-position: 0 0;
       
@@ -154,8 +154,8 @@
 
     .draggable-monitor {
       position: absolute;
-      background: #0067c0;
-      border: 2px solid #005a9e;
+      background: #0078d4;
+      border: 2px solid #106ebe;
       border-radius: 8px;
       cursor: move;
       display: flex;
@@ -171,7 +171,7 @@
       transition: box-shadow 0.15s ease;
 
       &:hover {
-        box-shadow: 0 4px 12px rgba(0, 103, 192, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4);
       }
 
       &.selected {
@@ -187,7 +187,7 @@
 
       &.dragging {
         z-index: 1000;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
       }
 
       .monitor-label {
@@ -230,8 +230,8 @@
 
   // Right panel - Settings
   .monitor-settings {
-    background: white;
-    border-left: 1px solid #e5e5e5;
+    background: #2d2d2d;
+    border-left: 1px solid #404040;
     padding: 24px;
     overflow-y: auto;
 
@@ -239,7 +239,7 @@
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 24px 0;
-      color: #000;
+      color: #ffffff;
     }
 
     .settings-section {
@@ -249,7 +249,7 @@
         font-size: 16px;
         font-weight: 600;
         margin: 0 0 12px 0;
-        color: #000;
+        color: #ffffff;
       }
 
       .setting-row {
@@ -260,22 +260,44 @@
           font-size: 14px;
           font-weight: 500;
           margin-bottom: 6px;
-          color: #000;
+          color: #ffffff;
         }
 
         select, input[type="number"] {
           width: 100%;
           padding: 8px 12px;
-          border: 1px solid #d0d0d0;
+          border: 1px solid #505050;
           border-radius: 4px;
-          background: white;
+          background: #3a3a3a;
           font-size: 14px;
-          color: #000;
+          color: #ffffff;
+          appearance: none; // Remove default styling
+          -webkit-appearance: none;
+          -moz-appearance: none;
           
           &:focus {
             outline: none;
-            border-color: #0067c0;
-            box-shadow: 0 0 0 1px #0067c0;
+            border-color: #0078d4;
+            box-shadow: 0 0 0 1px #0078d4;
+          }
+
+          // Custom dropdown arrow for select
+          &::-ms-expand {
+            display: none; // Hide IE dropdown arrow
+          }
+        }
+
+        select {
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 8px center;
+          background-size: 16px;
+          padding-right: 32px; // Make room for arrow
+
+          option {
+            background: #3a3a3a;
+            color: #ffffff;
+            padding: 8px 12px;
           }
         }
 
@@ -297,7 +319,7 @@
             height: 0;
             
             &:checked + .slider {
-              background-color: #0067c0;
+              background-color: #0078d4;
               
               &:before {
                 transform: translateX(24px);
@@ -312,7 +334,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
+            background-color: #666;
             transition: .2s;
             border-radius: 24px;
             
@@ -335,7 +357,7 @@
     .no-selection {
       text-align: center;
       padding: 48px 16px;
-      color: #666;
+      color: #cccccc;
       
       p {
         font-size: 14px;
@@ -346,8 +368,8 @@
 
   // Bottom actions
   .actions {
-    background: white;
-    border-top: 1px solid #e5e5e5;
+    background: #2d2d2d;
+    border-top: 1px solid #404040;
     padding: 16px 32px;
     display: flex;
     justify-content: space-between;
@@ -355,7 +377,7 @@
     
     .status-text {
       font-size: 14px;
-      color: #666;
+      color: #cccccc;
     }
 
     .action-buttons {
@@ -364,7 +386,7 @@
       
       button {
         padding: 8px 20px;
-        border: 1px solid #d0d0d0;
+        border: 1px solid #505050;
         border-radius: 4px;
         font-size: 14px;
         font-weight: 500;
@@ -372,27 +394,27 @@
         transition: all 0.15s ease;
         
         &.primary {
-          background: #0067c0;
+          background: #0078d4;
           color: white;
-          border-color: #0067c0;
+          border-color: #0078d4;
           
           &:hover {
-            background: #005a9e;
-            border-color: #005a9e;
+            background: #106ebe;
+            border-color: #106ebe;
           }
           
           &:active {
-            background: #004f87;
+            background: #005a9e;
           }
         }
         
         &.secondary {
-          background: white;
-          color: #666;
+          background: #3a3a3a;
+          color: #cccccc;
           
           &:hover {
-            background: #f5f5f5;
-            border-color: #999;
+            background: #404040;
+            border-color: #606060;
           }
         }
       }
@@ -406,16 +428,16 @@
     align-items: center;
     justify-content: center;
     height: 400px;
-    background: white;
+    background: #2d2d2d;
     margin: 24px;
     border-radius: 8px;
-    border: 1px solid #e5e5e5;
+    border: 1px solid #404040;
     
     .spinner {
       width: 32px;
       height: 32px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #0067c0;
+      border: 3px solid #3a3a3a;
+      border-top: 3px solid #0078d4;
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 16px;
@@ -423,14 +445,14 @@
     
     p {
       font-size: 14px;
-      color: #666;
+      color: #cccccc;
       margin: 0;
     }
   }
 
   .error {
     h3 {
-      color: #d13438;
+      color: #ff6b6b;
       font-size: 16px;
       margin: 0 0 8px 0;
     }
@@ -438,7 +460,7 @@
     .retry-button {
       margin-top: 16px;
       padding: 8px 16px;
-      background: #d13438;
+      background: #ff6b6b;
       color: white;
       border: none;
       border-radius: 4px;
@@ -446,7 +468,7 @@
       font-size: 14px;
       
       &:hover {
-        background: #b02a2e;
+        background: #ff5252;
       }
     }
   }

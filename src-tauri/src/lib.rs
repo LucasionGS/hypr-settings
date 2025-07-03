@@ -16,7 +16,7 @@ pub struct Monitor {
     pub x: i32,
     pub y: i32,
     #[serde(rename = "refreshRate")]
-    pub refresh_rate: i32,
+    pub refresh_rate: f64,
     pub disabled: bool,
     pub scale: f64,
     #[serde(rename = "availableModes")]
@@ -75,12 +75,37 @@ fn get_monitors() -> Result<Vec<Monitor>, String> {
         let height = monitor["height"].as_i64().unwrap_or(0) as i32;
         let x = monitor["x"].as_i64().unwrap_or(0) as i32;
         let y = monitor["y"].as_i64().unwrap_or(0) as i32;
-        let refresh_rate = monitor["refreshRate"].as_f64().unwrap_or(60.0) as i32;
+        let refresh_rate = monitor["refreshRate"].as_f64().unwrap_or(60.0);
         let disabled = monitor["disabled"].as_bool().unwrap_or(false);
         let scale = monitor["scale"].as_f64().unwrap_or(1.0);
         
-        // Get available modes
-        let available_modes = get_available_modes(&name);
+        // Get available modes from JSON
+        let available_modes = if let Some(modes_array) = monitor["availableModes"].as_array() {
+            modes_array.iter()
+                .filter_map(|mode| mode.as_str().map(|s| s.to_string()))
+                .collect()
+        } else {
+            // Fallback to common modes if not available
+            vec![
+                "1920x1080@60.00Hz".to_string(),
+                "1920x1080@59.94Hz".to_string(),
+                "1680x1050@59.95Hz".to_string(),
+                "1280x1024@75.03Hz".to_string(),
+                "1280x1024@60.02Hz".to_string(),
+                "1440x900@59.89Hz".to_string(),
+                "1280x960@60.00Hz".to_string(),
+                "1280x720@60.00Hz".to_string(),
+                "1024x768@75.03Hz".to_string(),
+                "1024x768@70.07Hz".to_string(),
+                "1024x768@60.00Hz".to_string(),
+                "800x600@75.00Hz".to_string(),
+                "800x600@72.19Hz".to_string(),
+                "800x600@60.32Hz".to_string(),
+                "640x480@75.00Hz".to_string(),
+                "640x480@72.81Hz".to_string(),
+                "640x480@59.94Hz".to_string(),
+            ]
+        };
         
         result.push(Monitor {
             id: index as i32,
@@ -126,7 +151,7 @@ fn save_monitor_config(monitors: Vec<Monitor>) -> Result<String, String> {
     
     for monitor in &monitors {
         config_content.push_str(&format!(
-            "monitor = {}, {}x{}@{}, {}x{}, {:.2}\n",
+            "monitor = {}, {}x{}@{:.2}, {}x{}, {:.2}\n",
             monitor.name,
             monitor.width,
             monitor.height,
@@ -188,46 +213,4 @@ fn save_monitor_config(monitors: Vec<Monitor>) -> Result<String, String> {
     // }
     
     Ok(format!("Monitor configuration saved to {}", config_file.display()))
-}
-
-fn get_available_modes(monitor_name: &str) -> Vec<String> {
-    let output = Command::new("hyprctl")
-        .arg("monitors")
-        .arg("all")
-        .output();
-    
-    if let Ok(output) = output {
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let mut modes = Vec::new();
-        let mut in_monitor = false;
-        
-        for line in stdout.lines() {
-            if line.contains(&format!("Monitor {}", monitor_name)) {
-                in_monitor = true;
-                continue;
-            }
-            
-            if in_monitor && line.starts_with("Monitor ") {
-                break;
-            }
-            
-            if in_monitor && line.trim().contains("x") && line.contains("@") {
-                let mode = line.trim().to_string();
-                if !modes.contains(&mode) {
-                    modes.push(mode);
-                }
-            }
-        }
-        
-        modes
-    } else {
-        // Fallback common modes
-        vec![
-            "1920x1080@60".to_string(),
-            "1920x1080@144".to_string(),
-            "2560x1440@60".to_string(),
-            "2560x1440@144".to_string(),
-            "3840x2160@60".to_string(),
-        ]
-    }
 }

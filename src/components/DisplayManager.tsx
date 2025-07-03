@@ -30,6 +30,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
   });
 
   const [snapPreview, setSnapPreview] = useState<{ x: number; y: number } | null>(null);
+  const [layoutDimensions, setLayoutDimensions] = useState<{ width: number; height: number }>({ width: 800, height: 600 });
 
   const layoutRef = useRef<HTMLDivElement>(null);
 
@@ -76,8 +77,8 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
     }
 
     // Get actual layout container dimensions
-    const layoutWidth = layoutRef.current?.clientWidth || 800;
-    const layoutHeight = layoutRef.current?.clientHeight || 600;
+    const layoutWidth = layoutRef.current?.clientWidth || layoutDimensions.width;
+    const layoutHeight = layoutRef.current?.clientHeight || layoutDimensions.height;
     const layoutCenterX = layoutWidth / 2;
     const layoutCenterY = layoutHeight / 2;
 
@@ -89,7 +90,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
       x: monitor.x * scale + offsetX,
       y: monitor.y * scale + offsetY
     };
-  }, [monitors, centerView]);
+  }, [monitors, centerView, layoutDimensions]);
 
   // Convert layout coordinates back to monitor coordinates
   const getMonitorPosition = useCallback((layoutX: number, layoutY: number) => {
@@ -106,8 +107,8 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
     }
 
     // Get actual layout container dimensions
-    const layoutWidth = layoutRef.current?.clientWidth || 800;
-    const layoutHeight = layoutRef.current?.clientHeight || 600;
+    const layoutWidth = layoutRef.current?.clientWidth || layoutDimensions.width;
+    const layoutHeight = layoutRef.current?.clientHeight || layoutDimensions.height;
     const layoutCenterX = layoutWidth / 2;
     const layoutCenterY = layoutHeight / 2;
 
@@ -120,7 +121,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
       x: Math.round((layoutX - offsetX) / scale),
       y: Math.round((layoutY - offsetY) / scale)
     };
-  }, [monitors, centerView]);
+  }, [monitors, centerView, layoutDimensions]);
 
   // Snap monitor to nearest edges of other monitors
   const snapToNearestEdge = useCallback((monitor: any, newX: number, newY: number) => {
@@ -308,20 +309,45 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
   // Force re-render when layout container resizes to ensure proper centering
   React.useLayoutEffect(() => {
     const handleResize = () => {
-      // Force re-render by updating a state that triggers layout recalculation
       if (layoutRef.current) {
-        // The layout functions will automatically use the new dimensions
-        // This effect just ensures they get called when the container resizes
+        const newWidth = layoutRef.current.clientWidth;
+        const newHeight = layoutRef.current.clientHeight;
+        
+        // Update layout dimensions to trigger re-render
+        setLayoutDimensions(prev => {
+          if (prev.width !== newWidth || prev.height !== newHeight) {
+            return { width: newWidth, height: newHeight };
+          }
+          return prev;
+        });
       }
     };
 
     const resizeObserver = new ResizeObserver(handleResize);
     if (layoutRef.current) {
       resizeObserver.observe(layoutRef.current);
+      // Initialize dimensions on first render
+      handleResize();
     }
 
     return () => {
       resizeObserver.disconnect();
+    };
+  }, [monitors]);
+
+  // Force proper centering on initial load and when monitors change
+  React.useEffect(() => {
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    const timer = requestAnimationFrame(() => {
+      if (layoutRef.current && monitors.length > 0) {
+        // Force a re-render by triggering the layout calculation
+        // This ensures centering works properly on initial load
+        layoutRef.current.style.transform = 'translateZ(0)'; // Trigger a repaint
+      }
+    });
+
+    return () => {
+      cancelAnimationFrame(timer);
     };
   }, [monitors]);
 
@@ -330,10 +356,24 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
     if (!selectedMonitor) return;
     
     const [width, height] = resolution.split('x').map(Number);
+    const displaySettings = getDisplaySettings(selectedMonitor);
+    
+    // Get available refresh rates for this resolution
+    const availableRates = displaySettings.resolutionModes[resolution] || [];
+    
+    // Choose the best refresh rate:
+    // 1. Keep current rate if available for this resolution
+    // 2. Otherwise, pick the highest available rate
+    let newRefreshRate = selectedMonitor.refreshRate;
+    if (!availableRates.includes(newRefreshRate)) {
+      newRefreshRate = availableRates[0] || 60; // Highest rate (sorted descending)
+    }
+    
     const updatedMonitor = {
       ...selectedMonitor,
       width,
-      height
+      height,
+      refreshRate: newRefreshRate
     };
     
     updateMonitor(updatedMonitor);
@@ -495,8 +535,8 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
               if (!viewInfo) return null;
               
               const scale = 0.15;
-              const layoutWidth = layoutRef.current?.clientWidth || 800;
-              const layoutHeight = layoutRef.current?.clientHeight || 600;
+              const layoutWidth = layoutRef.current?.clientWidth || layoutDimensions.width;
+              const layoutHeight = layoutRef.current?.clientHeight || layoutDimensions.height;
               const layoutCenterX = layoutWidth / 2;
               const layoutCenterY = layoutHeight / 2;
               const offsetX = layoutCenterX - (viewInfo.centerX * scale);
@@ -511,7 +551,7 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
                     top: viewInfo.centerY * scale + offsetY,
                     width: 8,
                     height: 8,
-                    backgroundColor: '#0067c0',
+                    backgroundColor: '#0078d4',
                     borderRadius: '50%',
                     transform: 'translate(-50%, -50%)',
                     pointerEvents: 'none',
@@ -550,9 +590,13 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
                     value={selectedMonitor.refreshRate}
                     onChange={(e) => handleRefreshRateChange(Number(e.target.value))}
                   >
-                    {displaySettings?.refreshRates.map(rate => (
-                      <option key={rate} value={rate}>{rate}Hz</option>
-                    ))}
+                    {(() => {
+                      const currentResolution = `${selectedMonitor.width}x${selectedMonitor.height}`;
+                      const availableRates = displaySettings?.resolutionModes[currentResolution] || [];
+                      return availableRates.map(rate => (
+                        <option key={rate} value={rate}>{rate}Hz</option>
+                      ));
+                    })()}
                   </select>
                 </div>
 
