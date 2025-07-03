@@ -8,32 +8,25 @@ url="https://github.com/LucasionGS/hypr-settings.git"
 license=('MIT')
 depends=('webkit2gtk' 'gtk3' 'libayatana-appindicator')
 makedepends=('rust' 'cargo' 'nodejs' 'npm' 'git')
-source=("git+https://github.com/LucasionGS/hypr-settings.git")
-sha256sums=('SKIP')
+source=()
+sha256sums=()
 
 prepare() {
-    cd "$srcdir/hypr-settings"
     # Install frontend dependencies
     npm install
 }
 
 build() {
-    cd "$srcdir/hypr-settings"
-    
+    cd "$srcdir/.."
     # Set environment variable for WebKit
     export WEBKIT_DISABLE_DMABUF_RENDERER=1
     
-    # Build the frontend
-    npm run build
-    
-    # Build the Tauri application
-    cd src-tauri
-    cargo build --release
+    # Build the Tauri application (which includes frontend build)
+    npm run tauri build
 }
 
 package() {
-    cd "$srcdir/hypr-settings"
-    
+    cd "$srcdir/.."
     # Install the binary
     install -Dm755 "src-tauri/target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
     
