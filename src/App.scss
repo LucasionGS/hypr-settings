@@ -1,9 +1,15 @@
-main.main-container {
-  width: 100vw;
+.app {
+  display: flex;
   height: 100vh;
-  overflow-x: hidden;
+  background: #1e1e1e;
+  color: #ffffff;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+  .main-content {
+    flex: 1;
+    overflow: hidden;
+    background: #2d2d2d;
+  }
 }

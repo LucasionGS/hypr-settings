@@ -1,0 +1,372 @@
+.wifi-manager {
+  padding: 24px;
+  height: 100%;
+  overflow-y: auto;
+  background: #2d2d2d;
+
+  .wifi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #404040;
+
+    .wifi-status {
+      h2 {
+        margin: 0 0 8px 0;
+        font-size: 24px;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      .status-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        color: #cccccc;
+
+        .status-indicator {
+          font-size: 12px;
+        }
+
+        .connected-network {
+          font-weight: 500;
+          color: #00d4aa;
+        }
+      }
+    }
+
+    .wifi-controls {
+      display: flex;
+      gap: 12px;
+
+      button {
+        padding: 8px 16px;
+        border: 1px solid #505050;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &.toggle-wifi {
+          &.enabled {
+            background: #d83b01;
+            color: white;
+            border-color: #d83b01;
+
+            &:hover {
+              background: #c82a00;
+            }
+          }
+
+          &.disabled {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+
+            &:hover {
+              background: #106ebe;
+            }
+          }
+        }
+
+        &.refresh-button {
+          background: #3a3a3a;
+          color: #cccccc;
+
+          &:hover {
+            background: #404040;
+            border-color: #606060;
+          }
+        }
+      }
+    }
+  }
+
+  .networks-list {
+    .no-networks {
+      text-align: center;
+      padding: 48px 16px;
+      color: #cccccc;
+
+      p {
+        font-size: 16px;
+        margin: 0;
+      }
+    }
+
+    .network-item {
+      background: #3a3a3a;
+      border: 1px solid #505050;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #404040;
+        border-color: #606060;
+      }
+
+      &.connected {
+        border-color: #00d4aa;
+        background: #2a4a42;
+
+        &:hover {
+          background: #2f4f47;
+        }
+      }
+
+      .network-info {
+        flex: 1;
+
+        .network-name {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 4px;
+
+          .ssid {
+            font-size: 16px;
+            font-weight: 500;
+            color: #ffffff;
+          }
+
+          .network-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+
+            .signal-text {
+              color: #cccccc;
+              font-size: 12px;
+            }
+
+            .saved-badge {
+              font-size: 12px;
+            }
+          }
+        }
+
+        .network-details {
+          display: flex;
+          gap: 12px;
+          font-size: 12px;
+          color: #aaaaaa;
+
+          .connected-text {
+            color: #00d4aa;
+            font-weight: 500;
+          }
+        }
+      }
+
+      .network-actions {
+        display: flex;
+        gap: 8px;
+
+        button {
+          padding: 6px 12px;
+          border: 1px solid #505050;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          &.connect-button {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+
+            &:hover:not(:disabled) {
+              background: #106ebe;
+            }
+
+            &:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+          }
+
+          &.disconnect-button {
+            background: #d83b01;
+            color: white;
+            border-color: #d83b01;
+
+            &:hover {
+              background: #c82a00;
+            }
+          }
+
+          &.forget-button {
+            background: #6c6c6c;
+            color: white;
+            border-color: #6c6c6c;
+
+            &:hover {
+              background: #7a7a7a;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .password-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+
+    .password-dialog {
+      background: #2d2d2d;
+      border: 1px solid #404040;
+      border-radius: 8px;
+      padding: 24px;
+      min-width: 400px;
+      max-width: 500px;
+
+      h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        color: #ffffff;
+      }
+
+      p {
+        margin: 0 0 16px 0;
+        color: #cccccc;
+        font-size: 14px;
+      }
+
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #505050;
+        border-radius: 4px;
+        background: #3a3a3a;
+        color: #ffffff;
+        font-size: 14px;
+        margin-bottom: 20px;
+
+        &:focus {
+          outline: none;
+          border-color: #0078d4;
+          box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+        }
+      }
+
+      .dialog-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+
+        button {
+          padding: 8px 16px;
+          border: 1px solid #505050;
+          border-radius: 4px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.15s ease;
+
+          &.cancel-button {
+            background: #3a3a3a;
+            color: #cccccc;
+
+            &:hover {
+              background: #404040;
+            }
+          }
+
+          &.connect-button {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+
+            &:hover:not(:disabled) {
+              background: #106ebe;
+            }
+
+            &:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Loading and error states
+  .loading, .error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    background: #2d2d2d;
+    margin: 24px;
+    border-radius: 8px;
+    border: 1px solid #404040;
+    
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #3a3a3a;
+      border-top: 3px solid #0078d4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 16px;
+    }
+    
+    p {
+      color: #cccccc;
+      font-size: 16px;
+      margin: 0;
+    }
+  }
+
+  .error {
+    h3 {
+      color: #ff6b6b;
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+    
+    .retry-button {
+      margin-top: 16px;
+      padding: 8px 20px;
+      background: #0078d4;
+      color: white;
+      border: 1px solid #0078d4;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      
+      &:hover {
+        background: #106ebe;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

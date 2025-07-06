@@ -1,11 +1,9 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::Manager;
-use std::path::PathBuf;
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Monitor {
@@ -21,6 +19,23 @@ pub struct Monitor {
     pub scale: f64,
     #[serde(rename = "availableModes")]
     pub available_modes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WifiNetwork {
+    pub ssid: String,
+    pub signal_strength: i32,
+    pub security: String,
+    pub connected: bool,
+    pub saved: bool,
+    pub in_use: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WifiStatus {
+    pub enabled: bool,
+    pub connected_ssid: Option<String>,
+    pub interface: String,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -39,7 +54,7 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
 
     // Invokeable commands
-    .invoke_handler(tauri::generate_handler![greet, get_monitors, save_monitor_config])
+    .invoke_handler(tauri::generate_handler![greet, get_monitors, save_monitor_config, get_wifi_status, get_wifi_networks, connect_wifi, disconnect_wifi, forget_wifi, toggle_wifi])
 
 
     .run(tauri::generate_context!())
@@ -213,4 +228,183 @@ fn save_monitor_config(monitors: Vec<Monitor>) -> Result<String, String> {
     // }
     
     Ok(format!("Monitor configuration saved to {}", config_file.display()))
+}
+
+#[tauri::command]
+fn get_wifi_status() -> Result<WifiStatus, String> {
+    let output = Command::new("nmcli")
+        .args(["-t", "-f", "WIFI", "general"])
+        .output()
+        .map_err(|e| format!("Failed to get WiFi status: {}", e))?;
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let wifi_enabled = stdout.trim() == "enabled";
+    
+    // Get WiFi interface
+    let interface_output = Command::new("nmcli")
+        .args(["-t", "-f", "DEVICE,TYPE", "device"])
+        .output()
+        .map_err(|e| format!("Failed to get interfaces: {}", e))?;
+    
+    let interface_stdout = String::from_utf8_lossy(&interface_output.stdout);
+    let mut interface = String::from("wlan0"); // default fallback
+    
+    for line in interface_stdout.lines() {
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() >= 2 && parts[1] == "wifi" {
+            interface = parts[0].to_string();
+            break;
+        }
+    }
+    
+    // Get connected network
+    let connected_output = Command::new("nmcli")
+        .args(["-t", "-f", "NAME", "connection", "show", "--active"])
+        .output()
+        .map_err(|e| format!("Failed to get active connections: {}", e))?;
+    
+    let connected_stdout = String::from_utf8_lossy(&connected_output.stdout);
+    let connected_ssid = if connected_stdout.trim().is_empty() {
+        None
+    } else {
+        connected_stdout.trim().lines().next().map(|s| s.to_string())
+    };
+    
+    Ok(WifiStatus {
+        enabled: wifi_enabled,
+        connected_ssid,
+        interface,
+    })
+}
+
+#[tauri::command]
+fn get_wifi_networks() -> Result<Vec<WifiNetwork>, String> {
+    // First rescan for networks
+    let _ = Command::new("nmcli")
+        .args(["device", "wifi", "rescan"])
+        .output();
+    
+    // Get available networks
+    let output = Command::new("nmcli")
+        .args(["-t", "-f", "SSID,SIGNAL,SECURITY,IN-USE", "device", "wifi", "list"])
+        .output()
+        .map_err(|e| format!("Failed to get WiFi networks: {}", e))?;
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    
+    // Get saved connections
+    let saved_output = Command::new("nmcli")
+        .args(["-t", "-f", "NAME", "connection", "show"])
+        .output()
+        .map_err(|e| format!("Failed to get saved connections: {}", e))?;
+    
+    let saved_stdout = String::from_utf8_lossy(&saved_output.stdout);
+    let saved_networks: Vec<&str> = saved_stdout.lines().collect();
+    
+    let mut networks = Vec::new();
+    
+    for line in stdout.lines() {
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() >= 4 {
+            let ssid = parts[0].to_string();
+            if ssid.is_empty() {
+                continue; // Skip hidden networks
+            }
+            
+            let signal_strength = parts[1].parse().unwrap_or(0);
+            let security = parts[2].to_string();
+            let in_use = parts[3] == "*";
+            let saved = saved_networks.contains(&ssid.as_str());
+            
+            networks.push(WifiNetwork {
+                ssid,
+                signal_strength,
+                security,
+                connected: in_use,
+                saved,
+                in_use,
+            });
+        }
+    }
+    
+    // Remove duplicates and sort: saved networks first, then by signal strength
+    networks.sort_by(|a, b| {
+        match (a.saved, b.saved) {
+            (true, false) => std::cmp::Ordering::Less,  // a is saved, b is not - a comes first
+            (false, true) => std::cmp::Ordering::Greater, // b is saved, a is not - b comes first
+            _ => b.signal_strength.cmp(&a.signal_strength), // both same saved status - sort by signal
+        }
+    });
+    networks.dedup_by(|a, b| a.ssid == b.ssid);
+    
+    Ok(networks)
+}
+
+#[tauri::command]
+fn connect_wifi(ssid: String, password: Option<String>) -> Result<String, String> {
+    let mut args = vec!["device", "wifi", "connect", &ssid];
+    
+    if let Some(pwd) = &password {
+        args.push("password");
+        args.push(pwd);
+    }
+    
+    let output = Command::new("nmcli")
+        .args(&args)
+        .output()
+        .map_err(|e| format!("Failed to connect to WiFi: {}", e))?;
+    
+    if output.status.success() {
+        Ok(format!("Connected to {}", ssid))
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to connect: {}", stderr))
+    }
+}
+
+#[tauri::command]
+fn disconnect_wifi(ssid: String) -> Result<String, String> {
+    let output = Command::new("nmcli")
+        .args(["connection", "down", &ssid])
+        .output()
+        .map_err(|e| format!("Failed to disconnect from WiFi: {}", e))?;
+    
+    if output.status.success() {
+        Ok(format!("Disconnected from {}", ssid))
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to disconnect: {}", stderr))
+    }
+}
+
+#[tauri::command]
+fn forget_wifi(ssid: String) -> Result<String, String> {
+    let output = Command::new("nmcli")
+        .args(["connection", "delete", &ssid])
+        .output()
+        .map_err(|e| format!("Failed to forget WiFi network: {}", e))?;
+    
+    if output.status.success() {
+        Ok(format!("Forgot network {}", ssid))
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to forget network: {}", stderr))
+    }
+}
+
+#[tauri::command]
+fn toggle_wifi(enable: bool) -> Result<String, String> {
+    let state = if enable { "on" } else { "off" };
+    
+    let output = Command::new("nmcli")
+        .args(["radio", "wifi", state])
+        .output()
+        .map_err(|e| format!("Failed to toggle WiFi: {}", e))?;
+    
+    if output.status.success() {
+        Ok(format!("WiFi turned {}", state))
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to toggle WiFi: {}", stderr))
+    }
 }

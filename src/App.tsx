@@ -1,14 +1,44 @@
+import { useState } from 'react';
+import { Navigation, Panel } from './components/Navigation';
+import DisplayManager from './components/DisplayManager';
+import { WifiManager } from './components/WifiManager';
+import { HyprlandProvider } from './services/Hyprland';
 import "./App.scss";
-import { HyprlandProvider } from "./services/Hyprland";
-import DisplayManager from "./components/DisplayManager";
+
+const panels: Panel[] = [
+  { id: 'display', name: 'Display', icon: '🖥️' },
+  { id: 'wifi', name: 'Wi-Fi', icon: '📶' },
+];
 
 function App() {
+  const [activePanel, setActivePanel] = useState('display');
+
+  const renderPanel = () => {
+    switch (activePanel) {
+      case 'display':
+        return (
+          <HyprlandProvider>
+            <DisplayManager />
+          </HyprlandProvider>
+        );
+      case 'wifi':
+        return <WifiManager />;
+      default:
+        return <div>Panel not found</div>;
+    }
+  };
+
   return (
-    <HyprlandProvider>
-      <main className="main-container">
-        <DisplayManager />
+    <div className="app">
+      <Navigation
+        panels={panels}
+        activePanel={activePanel}
+        onPanelChange={setActivePanel}
+      />
+      <main className="main-content">
+        {renderPanel()}
       </main>
-    </HyprlandProvider>
+    </div>
   );
 }
 
