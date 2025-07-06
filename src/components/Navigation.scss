@@ -1,20 +1,21 @@
 .navigation {
-  background: #1e1e1e;
-  border-right: 1px solid #404040;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
   width: 250px;
   display: flex;
   flex-direction: column;
   height: 100vh;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
 
   .nav-header {
     padding: 24px 20px;
-    border-bottom: 1px solid #404040;
+    border-bottom: 1px solid var(--border-color);
     
     h1 {
       margin: 0;
       font-size: 20px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--text-primary);
       text-align: center;
     }
   }
@@ -30,27 +31,27 @@
     padding: 12px 20px;
     border: none;
     background: transparent;
-    color: #cccccc;
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;
     text-align: left;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
     display: flex;
     align-items: center;
     gap: 12px;
     
     &:hover {
-      background: #2a2a2a;
-      color: #ffffff;
+      background: var(--bg-hover);
+      color: var(--text-primary);
     }
     
     &.active {
-      background: #0078d4;
-      color: #ffffff;
+      background: var(--accent-primary);
+      color: white;
       
       &:hover {
-        background: #106ebe;
+        background: var(--accent-hover);
       }
     }
     

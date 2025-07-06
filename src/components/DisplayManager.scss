@@ -1,29 +1,30 @@
-// DisplayManager.scss - Windows 11-style display management (Dark Theme)
+// DisplayManager.scss - Windows 11-style display management
 .display-manager {
   width: 100%;
   height: 100vh;
-  background: #202020;
-  color: #ffffff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
   display: flex;
   flex-direction: column;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 
   .header {
     padding: 24px 32px;
-    background: #2d2d2d;
-    border-bottom: 1px solid #404040;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
     
     h1 {
       font-size: 28px;
       font-weight: 600;
       margin: 0 0 8px 0;
-      color: #ffffff;
+      color: var(--text-primary);
     }
     
     p {
       font-size: 14px;
       margin: 0;
-      color: #cccccc;
+      color: var(--text-secondary);
     }
   }
 
@@ -31,13 +32,13 @@
     flex: 1;
     display: grid;
     grid-template-columns: 320px 1fr 320px;
-    background: #202020;
+    background: var(--bg-secondary);
   }
 
   // Left panel - Monitor list
   .monitor-list {
-    background: #2d2d2d;
-    border-right: 1px solid #404040;
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
     padding: 24px;
     overflow-y: auto;
 
@@ -45,7 +46,7 @@
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 16px 0;
-      color: #ffffff;
+      color: var(--text-primary);
     }
 
     .monitors {
@@ -58,21 +59,21 @@
       display: flex;
       align-items: center;
       padding: 12px 16px;
-      background: #3a3a3a;
-      border: 1px solid #505050;
-      border-radius: 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-medium);
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all var(--transition-fast);
 
       &:hover {
-        background: #404040;
-        border-color: #606060;
+        background: var(--bg-hover);
+        border-color: var(--border-hover);
       }
 
       &.selected {
-        background: #0f2027;
-        border-color: #0078d4;
-        box-shadow: 0 0 0 1px #0078d4;
+        background: var(--accent-light);
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 1px var(--accent-primary);
       }
 
       &.disabled {
@@ -83,7 +84,7 @@
         width: 32px;
         height: 32px;
         margin-right: 12px;
-        color: #cccccc;
+        color: var(--text-secondary);
         
         svg {
           width: 100%;
@@ -98,13 +99,13 @@
           margin: 0;
           font-size: 14px;
           font-weight: 600;
-          color: #ffffff;
+          color: var(--text-primary);
         }
         
         p {
           margin: 2px 0 0 0;
           font-size: 12px;
-          color: #cccccc;
+          color: var(--text-secondary);
         }
       }
     }
@@ -115,29 +116,29 @@
     padding: 24px;
     display: flex;
     flex-direction: column;
-    background: #202020;
+    background: var(--bg-secondary);
 
     h2 {
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 24px 0;
-      color: #ffffff;
+      color: var(--text-primary);
     }
 
     .layout-container {
       flex: 1;
       position: relative;
-      background: #2d2d2d;
-      border: 1px solid #404040;
-      border-radius: 8px;
+      background: var(--bg-tertiary);
+      border: var(--border-thin) var(--border-color);
+      border-radius: var(--radius-medium);
       min-height: 600px;
       max-height: 800px; // Limit maximum height
       overflow: auto; // Allow scrolling if needed
       
       // Add a subtle grid pattern to help with positioning
       background-image: 
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        linear-gradient(var(--border-subtle) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
       background-size: 50px 50px;
       background-position: 0 0;
       
@@ -154,40 +155,40 @@
 
     .draggable-monitor {
       position: absolute;
-      background: #0078d4;
-      border: 2px solid #106ebe;
-      border-radius: 8px;
+      background: var(--accent-primary);
+      border: 2px solid var(--accent-border);
+      border-radius: var(--radius-medium);
       cursor: move;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
+      color: var(--accent-text);
       font-weight: 600;
       font-size: 12px;
       text-align: center;
       min-width: 120px;
       min-height: 80px;
       user-select: none;
-      transition: box-shadow 0.15s ease;
+      transition: box-shadow var(--transition-fast);
 
       &:hover {
-        box-shadow: 0 4px 12px rgba(0, 120, 212, 0.4);
+        box-shadow: 0 4px 12px var(--shadow-accent);
       }
 
       &.selected {
-        border-color: #ff6900;
-        box-shadow: 0 0 0 2px #ff6900;
+        border-color: var(--accent-danger);
+        box-shadow: 0 0 0 2px var(--accent-danger);
       }
 
       &.disabled {
-        background: #666;
-        border-color: #555;
+        background: var(--bg-disabled);
+        border-color: var(--border-disabled);
         opacity: 0.7;
       }
 
       &.dragging {
         z-index: 1000;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        box-shadow: var(--shadow-elevated);
       }
 
       .monitor-label {
@@ -208,9 +209,9 @@
     }
 
     .snap-preview {
-      border: 2px dashed #ff6900 !important;
-      border-radius: 8px;
-      background: rgba(255, 105, 0, 0.1);
+      border: 2px dashed var(--accent-danger) !important;
+      border-radius: var(--radius-medium);
+      background: var(--accent-danger-bg);
       animation: pulse-snap 0.6s ease-in-out infinite alternate;
       
       &::before {
@@ -219,7 +220,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        color: #ff6900;
+        color: var(--accent-danger);
         font-size: 10px;
         font-weight: 600;
         text-transform: uppercase;
@@ -230,8 +231,8 @@
 
   // Right panel - Settings
   .monitor-settings {
-    background: #2d2d2d;
-    border-left: 1px solid #404040;
+    background: var(--bg-primary);
+    border-left: var(--border-thin) var(--border-color);
     padding: 24px;
     overflow-y: auto;
 
@@ -239,7 +240,7 @@
       font-size: 20px;
       font-weight: 600;
       margin: 0 0 24px 0;
-      color: #ffffff;
+      color: var(--text-primary);
     }
 
     .settings-section {
@@ -249,7 +250,7 @@
         font-size: 16px;
         font-weight: 600;
         margin: 0 0 12px 0;
-        color: #ffffff;
+        color: var(--text-primary);
       }
 
       .setting-row {
@@ -260,25 +261,25 @@
           font-size: 14px;
           font-weight: 500;
           margin-bottom: 6px;
-          color: #ffffff;
+          color: var(--text-primary);
         }
 
         select, input[type="number"] {
           width: 100%;
           padding: 8px 12px;
-          border: 1px solid #505050;
-          border-radius: 4px;
-          background: #3a3a3a;
+          border: var(--border-thin) var(--border-color);
+          border-radius: var(--radius-small);
+          background: var(--input-background);
           font-size: 14px;
-          color: #ffffff;
+          color: var(--text-primary);
           appearance: none; // Remove default styling
           -webkit-appearance: none;
           -moz-appearance: none;
           
           &:focus {
             outline: none;
-            border-color: #0078d4;
-            box-shadow: 0 0 0 1px #0078d4;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 1px var(--accent-primary);
           }
 
           // Custom dropdown arrow for select
@@ -288,15 +289,15 @@
         }
 
         select {
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
           background-repeat: no-repeat;
           background-position: right 8px center;
           background-size: 16px;
           padding-right: 32px; // Make room for arrow
 
           option {
-            background: #3a3a3a;
-            color: #ffffff;
+            background: var(--input-background);
+            color: var(--text-primary);
             padding: 8px 12px;
           }
         }
@@ -319,7 +320,7 @@
             height: 0;
             
             &:checked + .slider {
-              background-color: #0078d4;
+              background-color: var(--accent-primary);
               
               &:before {
                 transform: translateX(24px);
@@ -334,8 +335,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #666;
-            transition: .2s;
+            background-color: var(--bg-disabled);
+            transition: var(--transition-fast);
             border-radius: 24px;
             
             &:before {
@@ -345,8 +346,8 @@
               width: 20px;
               left: 2px;
               bottom: 2px;
-              background-color: white;
-              transition: .2s;
+              background-color: var(--toggle-thumb);
+              transition: var(--transition-fast);
               border-radius: 50%;
             }
           }
@@ -357,7 +358,7 @@
     .no-selection {
       text-align: center;
       padding: 48px 16px;
-      color: #cccccc;
+      color: var(--text-secondary);
       
       p {
         font-size: 14px;
@@ -368,8 +369,8 @@
 
   // Bottom actions
   .actions {
-    background: #2d2d2d;
-    border-top: 1px solid #404040;
+    background: var(--bg-primary);
+    border-top: var(--border-thin) var(--border-color);
     padding: 16px 32px;
     display: flex;
     justify-content: space-between;
@@ -377,7 +378,7 @@
     
     .status-text {
       font-size: 14px;
-      color: #cccccc;
+      color: var(--text-secondary);
     }
 
     .action-buttons {
@@ -386,35 +387,35 @@
       
       button {
         padding: 8px 20px;
-        border: 1px solid #505050;
-        border-radius: 4px;
+        border: var(--border-thin) var(--border-color);
+        border-radius: var(--radius-small);
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all var(--transition-fast);
         
         &.primary {
-          background: #0078d4;
-          color: white;
-          border-color: #0078d4;
+          background: var(--accent-primary);
+          color: var(--accent-text);
+          border-color: var(--accent-border);
           
           &:hover {
-            background: #106ebe;
-            border-color: #106ebe;
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
           }
           
           &:active {
-            background: #005a9e;
+            background: var(--accent-active);
           }
         }
         
         &.secondary {
-          background: #3a3a3a;
-          color: #cccccc;
+          background: var(--bg-tertiary);
+          color: var(--text-secondary);
           
           &:hover {
-            background: #404040;
-            border-color: #606060;
+            background: var(--bg-hover);
+            border-color: var(--border-hover);
           }
         }
       }
@@ -428,16 +429,16 @@
     align-items: center;
     justify-content: center;
     height: 400px;
-    background: #2d2d2d;
+    background: var(--bg-primary);
     margin: 24px;
-    border-radius: 8px;
-    border: 1px solid #404040;
+    border-radius: var(--radius-medium);
+    border: var(--border-thin) var(--border-color);
     
     .spinner {
       width: 32px;
       height: 32px;
-      border: 3px solid #3a3a3a;
-      border-top: 3px solid #0078d4;
+      border: 3px solid var(--bg-tertiary);
+      border-top: 3px solid var(--accent-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 16px;
@@ -445,14 +446,14 @@
     
     p {
       font-size: 14px;
-      color: #cccccc;
+      color: var(--text-secondary);
       margin: 0;
     }
   }
 
   .error {
     h3 {
-      color: #ff6b6b;
+      color: var(--status-error);
       font-size: 16px;
       margin: 0 0 8px 0;
     }
@@ -460,15 +461,16 @@
     .retry-button {
       margin-top: 16px;
       padding: 8px 16px;
-      background: #ff6b6b;
-      color: white;
+      background: var(--status-error);
+      color: var(--accent-text);
       border: none;
-      border-radius: 4px;
+      border-radius: var(--radius-small);
       cursor: pointer;
       font-size: 14px;
+      transition: background var(--transition-fast);
       
       &:hover {
-        background: #ff5252;
+        background: var(--status-error-hover);
       }
     }
   }
@@ -505,6 +507,6 @@
   
   .monitor-list, .monitor-settings {
     border: none;
-    border-bottom: 1px solid #e5e5e5;
+    border-bottom: var(--border-thin) var(--border-color);
   }
 }

@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import './WifiManager.scss';
+import { 
+  IconWifi, 
+  IconLock, 
+  IconLockOpen, 
+  IconRefresh, 
+  IconDeviceFloppy,
+  IconWifi0,
+  IconWifi1,
+  IconWifi2,
+  IconCircleCheck,
+  IconCircleX
+} from "@tabler/icons-react";
 
 interface WifiNetwork {
   ssid: string;
@@ -56,16 +68,36 @@ export const WifiManager: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
+      // Run both operations in parallel for faster loading
       await Promise.all([fetchWifiStatus(), fetchNetworks()]);
+    } catch (err) {
+      // Error handling is done in individual functions
+      console.error('Error during data refresh:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    refreshData();
-    // Refresh every 10 seconds
-    const interval = setInterval(refreshData, 10000);
+    // Initialize data loading asynchronously - don't block the component mount
+    const initializeComponent = async () => {
+      try {
+        await refreshData();
+      } catch (err) {
+        console.error('Failed to initialize Wi-Fi data:', err);
+      }
+    };
+    
+    // Start the async initialization
+    initializeComponent();
+    
+    // Set up periodic refresh every 10 seconds
+    const interval = setInterval(() => {
+      refreshData().catch(err => {
+        console.error('Failed to refresh Wi-Fi data:', err);
+      });
+    }, 10000);
+    
     return () => clearInterval(interval);
   }, []);
 
@@ -135,14 +167,14 @@ export const WifiManager: React.FC = () => {
   };
 
   const getSignalIcon = (strength: number) => {
-    if (strength >= 75) return '📶';
-    if (strength >= 50) return '📶';
-    if (strength >= 25) return '📶';
-    return '📶';
+    if (strength >= 75) return <IconWifi size={16} />;
+    if (strength >= 50) return <IconWifi2 size={16} />;
+    if (strength >= 25) return <IconWifi1 size={16} />;
+    return <IconWifi0 size={16} />;
   };
 
   const getSecurityIcon = (security: string) => {
-    return security && security !== '--' ? '🔒' : '🔓';
+    return security && security !== '--' ? <IconLock size={16} /> : <IconLockOpen size={16} />;
   };
 
   if (loading) {
@@ -177,7 +209,7 @@ export const WifiManager: React.FC = () => {
           <h2>Wi-Fi Networks</h2>
           <div className="status-info">
             <span className={`status-indicator ${wifiStatus?.enabled ? 'enabled' : 'disabled'}`}>
-              {wifiStatus?.enabled ? '🟢' : '🔴'}
+              {wifiStatus?.enabled ? <IconCircleCheck size={16} /> : <IconCircleX size={16} />}
             </span>
             <span>{wifiStatus?.enabled ? 'Enabled' : 'Disabled'}</span>
             {wifiStatus?.connected_ssid && (
@@ -195,7 +227,7 @@ export const WifiManager: React.FC = () => {
             {wifiStatus?.enabled ? 'Disable Wi-Fi' : 'Enable Wi-Fi'}
           </button>
           <button className="refresh-button" onClick={refreshData}>
-            🔄 Refresh
+            <IconRefresh size={16} /> Refresh
           </button>
         </div>
       </div>
@@ -216,7 +248,7 @@ export const WifiManager: React.FC = () => {
                       <span className="security">{getSecurityIcon(network.security)}</span>
                       <span className="signal">{getSignalIcon(network.signal_strength)}</span>
                       <span className="signal-text">{network.signal_strength}%</span>
-                      {network.saved && <span className="saved-badge">💾</span>}
+                      {network.saved && <span className="saved-badge"><IconDeviceFloppy size={16} /></span>}
                     </div>
                   </div>
                   <div className="network-details">

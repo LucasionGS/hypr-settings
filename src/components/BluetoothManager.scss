@@ -1,4 +1,4 @@
-.wifi-manager {
+.bluetooth-manager {
   padding: 24px;
   height: 100%;
   overflow-y: auto;
@@ -6,7 +6,7 @@
   color: var(--text-primary);
   transition: background-color var(--transition-normal), color var(--transition-normal);
 
-  .wifi-header {
+  .bluetooth-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -14,7 +14,7 @@
     padding-bottom: 16px;
     border-bottom: 1px solid var(--border-color);
 
-    .wifi-status {
+    .bluetooth-status {
       h2 {
         margin: 0 0 8px 0;
         font-size: 24px;
@@ -33,29 +33,33 @@
           font-size: 12px;
         }
 
-        .connected-network {
+        .adapter-name {
           font-weight: 500;
-          color: var(--success-color);
+          color: var(--text-primary);
+        }
+
+        .discovering {
+          color: var(--accent-primary);
+          font-weight: 500;
+          animation: pulse 1.5s infinite;
         }
       }
     }
 
-    .wifi-controls {
+    .bluetooth-controls {
       display: flex;
       gap: 12px;
 
       button {
         padding: 8px 16px;
         border: 1px solid var(--border-color);
-        border-radius: var(--radius-small);
+        border-radius: 4px;
         font-size: 14px;
         font-weight: 500;
         cursor: pointer;
-        transition: all var(--transition-fast);
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
+        transition: all 0.15s ease;
 
-        &.toggle-wifi {
+        &.toggle-bluetooth {
           &.enabled {
             background: var(--danger-color);
             color: white;
@@ -68,6 +72,26 @@
           }
 
           &.disabled {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+
+            &:hover {
+              background: var(--accent-hover);
+            }
+          }
+        }
+
+        &.discovery-button {
+          background: var(--bg-tertiary);
+          color: var(--text-secondary);
+
+          &:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-hover);
+          }
+
+          &.active {
             background: var(--accent-primary);
             color: white;
             border-color: var(--accent-primary);
@@ -91,28 +115,34 @@
     }
   }
 
-  .networks-list {
-    .no-networks {
+  .devices-list {
+    .no-devices {
       text-align: center;
       padding: 48px 16px;
       color: var(--text-secondary);
 
       p {
         font-size: 16px;
-        margin: 0;
+        margin: 0 0 8px 0;
+
+        &.hint {
+          font-size: 14px;
+          color: var(--text-muted);
+          margin: 0;
+        }
       }
     }
 
-    .network-item {
+    .device-item {
       background: var(--bg-tertiary);
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-medium);
+      border-radius: 8px;
       padding: 16px;
       margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: all var(--transition-fast);
+      transition: all 0.15s ease;
 
       &:hover {
         background: var(--bg-hover);
@@ -129,39 +159,65 @@
         }
       }
 
-      .network-info {
+      &.paired {
+        border-color: var(--accent-primary);
+        
+        &:hover {
+          background: var(--bg-hover);
+        }
+      }
+
+      .device-info {
         flex: 1;
 
-        .network-name {
+        .device-name {
           display: flex;
-          justify-content: space-between;
           align-items: center;
           margin-bottom: 4px;
+          gap: 12px;
 
-          .ssid {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--text-primary);
+          .device-icon {
+            font-size: 20px;
           }
 
-          .network-badges {
+          .name-details {
+            flex: 1;
+
+            .name {
+              display: block;
+              font-size: 16px;
+              font-weight: 500;
+              color: var(--text-primary);
+            }
+
+            .mac-address {
+              display: block;
+              font-size: 12px;
+              color: var(--text-muted);
+              font-family: 'Courier New', monospace;
+            }
+          }
+
+          .device-badges {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 14px;
 
-            .signal-text {
-              color: var(--text-secondary);
+            .signal {
               font-size: 12px;
+              cursor: help;
             }
 
-            .saved-badge {
+            .paired-badge,
+            .trusted-badge,
+            .connected-badge {
               font-size: 12px;
+              cursor: help;
             }
           }
         }
 
-        .network-details {
+        .device-details {
           display: flex;
           gap: 12px;
           font-size: 12px;
@@ -171,23 +227,42 @@
             color: var(--success-color);
             font-weight: 500;
           }
+
+          .paired-text {
+            color: var(--accent-primary);
+            font-weight: 500;
+          }
         }
       }
 
-      .network-actions {
+      .device-actions {
         display: flex;
         gap: 8px;
+        flex-wrap: wrap;
 
         button {
           padding: 6px 12px;
           border: 1px solid var(--border-color);
-          border-radius: var(--radius-small);
+          border-radius: 4px;
           font-size: 12px;
           font-weight: 500;
           cursor: pointer;
-          transition: all var(--transition-fast);
-          background: var(--bg-tertiary);
-          color: var(--text-primary);
+          transition: all 0.15s ease;
+
+          &.pair-button {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+
+            &:hover:not(:disabled) {
+              background: var(--accent-hover);
+            }
+
+            &:disabled {
+              opacity: 0.6;
+              cursor: not-allowed;
+            }
+          }
 
           &.connect-button {
             background: var(--accent-primary);
@@ -215,7 +290,7 @@
             }
           }
 
-          &.forget-button {
+          &.trust-button {
             background: var(--text-muted);
             color: white;
             border-color: var(--text-muted);
@@ -224,98 +299,26 @@
               background: var(--text-muted);
               opacity: 0.9;
             }
+
+            &.trusted {
+              background: var(--success-color);
+              border-color: var(--success-color);
+
+              &:hover {
+                background: var(--success-color);
+                opacity: 0.9;
+              }
+            }
           }
-        }
-      }
-    }
-  }
 
-  .password-dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-
-    .password-dialog {
-      background: var(--bg-primary);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-medium);
-      padding: 24px;
-      min-width: 400px;
-      max-width: 500px;
-      box-shadow: var(--shadow-large);
-
-      h3 {
-        margin: 0 0 8px 0;
-        font-size: 18px;
-        color: var(--text-primary);
-      }
-
-      p {
-        margin: 0 0 16px 0;
-        color: var(--text-secondary);
-        font-size: 14px;
-      }
-
-      input {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-small);
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
-        font-size: 14px;
-        margin-bottom: 20px;
-        transition: all var(--transition-normal);
-
-        &:focus {
-          outline: none;
-          border-color: var(--accent-primary);
-          box-shadow: 0 0 0 2px var(--accent-light);
-        }
-      }
-
-      .dialog-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-
-        button {
-          padding: 8px 16px;
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-small);
-          font-size: 14px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all var(--transition-fast);
-
-          &.cancel-button {
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
+          &.unpair-button {
+            background: var(--warning-color);
+            color: white;
+            border-color: var(--warning-color);
 
             &:hover {
-              background: var(--bg-hover);
-            }
-          }
-
-          &.connect-button {
-            background: var(--accent-primary);
-            color: white;
-            border-color: var(--accent-primary);
-
-            &:hover:not(:disabled) {
-              background: var(--accent-hover);
-            }
-
-            &:disabled {
-              opacity: 0.6;
-              cursor: not-allowed;
+              background: var(--warning-color);
+              opacity: 0.9;
             }
           }
         }
@@ -338,7 +341,7 @@
     .spinner {
       width: 32px;
       height: 32px;
-      border: 3px solid var(--border-color);
+      border: 3px solid var(--bg-tertiary);
       border-top: 3px solid var(--accent-primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
@@ -381,4 +384,9 @@
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
