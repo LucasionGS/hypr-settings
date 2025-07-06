@@ -1,6 +1,6 @@
 # Maintainer: Lucasion <lucasion@hotmail.com>
 pkgname=archion-settings
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc="A modern settings panel for Archion with display configuration"
 arch=('x86_64')
