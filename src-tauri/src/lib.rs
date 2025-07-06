@@ -73,6 +73,29 @@ pub struct AvailableThemes {
     pub fonts: Vec<String>,
 }
 
+// Package management structs
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PackageInfo {
+    pub name: String,
+    pub version: String,
+    pub description: String,
+    pub installed: bool,
+    pub size: Option<String>,
+    pub repo: Option<String>,
+    pub updatable: Option<bool>,
+    pub new_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PackageOperation {
+    pub operation: String, // "install", "remove", "update", "search"
+    pub package_name: Option<String>,
+    pub progress: u32,
+    pub status: String,
+    pub output: Vec<String>,
+    pub running: bool,
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -98,7 +121,7 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
 
     // Invokeable commands
-    .invoke_handler(tauri::generate_handler![greet, get_monitors, save_monitor_config, get_wifi_status, get_wifi_networks, connect_wifi, disconnect_wifi, forget_wifi, toggle_wifi, get_bluetooth_status, get_bluetooth_devices, toggle_bluetooth, start_bluetooth_discovery, stop_bluetooth_discovery, pair_bluetooth_device, unpair_bluetooth_device, connect_bluetooth_device, disconnect_bluetooth_device, trust_bluetooth_device, get_theme_settings, save_theme_settings, get_available_themes, get_system_theme, monitor_system_theme_changes, get_color_scheme])
+    .invoke_handler(tauri::generate_handler![greet, get_monitors, save_monitor_config, get_wifi_status, get_wifi_networks, refresh_wifi_networks, connect_wifi, disconnect_wifi, forget_wifi, toggle_wifi, get_bluetooth_status, get_bluetooth_devices, toggle_bluetooth, start_bluetooth_discovery, stop_bluetooth_discovery, pair_bluetooth_device, unpair_bluetooth_device, connect_bluetooth_device, disconnect_bluetooth_device, trust_bluetooth_device, get_theme_settings, save_theme_settings, get_available_themes, get_system_theme, monitor_system_theme_changes, get_color_scheme, detect_aur_helper, get_installed_packages, search_packages, get_package_updates, install_package, remove_package, update_package, system_update])
 
 
     .run(tauri::generate_context!())
@@ -323,12 +346,13 @@ fn get_wifi_status() -> Result<WifiStatus, String> {
 
 #[tauri::command]
 fn get_wifi_networks() -> Result<Vec<WifiNetwork>, String> {
-    // First rescan for networks
-    let _ = Command::new("nmcli")
-        .args(["device", "wifi", "rescan"])
-        .output();
+    // Skip automatic rescan to avoid permission prompts
+    // Users can manually refresh if needed
+    // let _ = Command::new("nmcli")
+    //     .args(["device", "wifi", "rescan"])
+    //     .output();
     
-    // Get available networks
+    // Get available networks from cache
     let output = Command::new("nmcli")
         .args(["-t", "-f", "SSID,SIGNAL,SECURITY,IN-USE", "device", "wifi", "list"])
         .output()
@@ -909,13 +933,26 @@ async fn set_gsetting(schema: &str, key: &str, value: &str) -> Result<(), String
 async fn get_available_gtk_themes() -> Result<Vec<String>, String> {
     let mut themes = Vec::new();
     
-    // Check common theme directories
-    let theme_dirs = [
+    // Always include built-in GTK themes first
+    let builtin_themes = vec![
+        "Adwaita".to_string(),
+        "Adwaita-dark".to_string(),
+        "Default".to_string(),
+        "HighContrast".to_string(),
+        "HighContrastInverse".to_string(),
+    ];
+
+    for builtin in &builtin_themes {
+        themes.push(builtin.clone());
+    }
+    
+    // Check common theme directories for additional themes
+    let theme_dirs = Vec::from([
         "/usr/share/themes",
         "/usr/local/share/themes",
         "~/.themes",
         "~/.local/share/themes",
-    ];
+    ]);
 
     for dir in theme_dirs {
         let expanded_dir = if dir.starts_with('~') {
@@ -928,9 +965,16 @@ async fn get_available_gtk_themes() -> Result<Vec<String>, String> {
             for entry in entries.flatten() {
                 if entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
                     let theme_name = entry.file_name().to_string_lossy().to_string();
-                    // Check if it has a gtk-3.0 or gtk-4.0 directory
                     let theme_path = entry.path();
-                    if theme_path.join("gtk-3.0").exists() || theme_path.join("gtk-4.0").exists() {
+                    
+                    // Check for various GTK theme indicators
+                    let has_gtk3 = theme_path.join("gtk-3.0").exists();
+                    let has_gtk4 = theme_path.join("gtk-4.0").exists();
+                    let has_index = theme_path.join("index.theme").exists();
+                    let has_gtk2 = theme_path.join("gtk-2.0").exists();
+                    
+                    // Accept theme if it has any GTK-related files/directories or index.theme
+                    if has_gtk3 || has_gtk4 || has_index || has_gtk2 {
                         if !themes.contains(&theme_name) {
                             themes.push(theme_name);
                         }
@@ -941,6 +985,9 @@ async fn get_available_gtk_themes() -> Result<Vec<String>, String> {
     }
 
     themes.sort();
+    themes.dedup(); // Remove any duplicates
+    
+    println!("Available GTK themes: {:?}", themes);
     Ok(themes)
 }
 
@@ -1084,4 +1131,516 @@ fn parse_font_string(font_string: &str) -> (String, i32) {
 #[tauri::command]
 async fn get_color_scheme() -> Result<String, String> {
     get_gsetting("org.gnome.desktop.interface", "color-scheme").await
+}
+
+// Helper function to get the appropriate privilege escalation command
+async fn get_privilege_command() -> String {
+    // Check if pkexec is available (preferred for GUI apps)
+    // pkexec shows a GUI authentication dialog instead of requiring terminal input
+    if Command::new("which")
+        .arg("pkexec")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+    {
+        return "pkexec".to_string();
+    }
+    
+    // Fallback to sudo if pkexec is not available
+    "sudo".to_string()
+}
+
+// Function to run AUR helper commands in a terminal window for interactive access
+async fn run_command_in_terminal(
+    app_handle: tauri::AppHandle,
+    operation: String,
+    package_name: Option<String>,
+    cmd: &str,
+    args: Vec<&str>,
+) -> Result<(), String> {
+    // Build the command string
+    let mut command_parts = vec![cmd];
+    command_parts.extend(args);
+    let command_str = command_parts.join(" ");
+    
+    // Try different terminal emulators in order of preference
+    let terminals = [
+        ("kitty", vec!["-e", "bash", "-c"]),
+        ("alacritty", vec!["-e", "bash", "-c"]),
+        ("wezterm", vec!["start", "--", "bash", "-c"]),
+        ("gnome-terminal", vec!["--", "bash", "-c"]),
+        ("konsole", vec!["-e", "bash", "-c"]),
+        ("xterm", vec!["-e", "bash", "-c"]),
+    ];
+    
+    for (terminal, terminal_args) in &terminals {
+        // Check if this terminal is available
+        if Command::new("which")
+            .arg(terminal)
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false)
+        {
+            // Emit progress update
+            let progress_operation = PackageOperation {
+                operation: operation.clone(),
+                package_name: package_name.clone(),
+                progress: 50,
+                status: format!("Running {} in terminal...", operation),
+                output: vec![format!("Opening {} terminal for interactive command...", terminal)],
+                running: true,
+            };
+            
+            if let Err(e) = app_handle.emit("package-progress", &progress_operation) {
+                eprintln!("Failed to emit package progress: {}", e);
+            }
+            
+            // Build the full command with a wrapper that keeps the terminal open
+            let wrapped_command = format!(
+                "echo 'Running: {}'; {}; echo ''; echo 'Command finished. Press Enter to close this terminal...'; read",
+                command_str, command_str
+            );
+            
+            // Run the command in the terminal
+            let mut terminal_cmd = Command::new(terminal);
+            terminal_cmd.args(terminal_args);
+            terminal_cmd.arg(&wrapped_command);
+            
+            let child_result = terminal_cmd.spawn();
+            
+            match child_result {
+                Ok(mut child) => {
+                    // Wait for the terminal process to complete
+                    match child.wait() {
+                        Ok(status) => {
+                            // Emit final progress
+                            let final_operation = PackageOperation {
+                                operation: operation.clone(),
+                                package_name: package_name.clone(),
+                                progress: 100,
+                                status: if status.success() {
+                                    format!("{} completed", operation)
+                                } else {
+                                    format!("{} may have failed - check terminal output", operation)
+                                },
+                                output: vec![format!("Terminal command completed with exit code: {:?}", status.code())],
+                                running: false,
+                            };
+                            
+                            if let Err(e) = app_handle.emit("package-progress", &final_operation) {
+                                eprintln!("Failed to emit package progress: {}", e);
+                            }
+                            
+                            return Ok(());
+                        }
+                        Err(e) => {
+                            return Err(format!("Failed to wait for terminal process: {}", e));
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Failed to start {} terminal: {}", terminal, e);
+                    continue; // Try next terminal
+                }
+            }
+        }
+    }
+    
+    // No suitable terminal found, emit error
+    let error_operation = PackageOperation {
+        operation: operation.clone(),
+        package_name: package_name.clone(),
+        progress: 0,
+        status: format!("Failed to find suitable terminal for {}", operation),
+        output: vec!["No compatible terminal emulator found. Please install one of: kitty, alacritty, wezterm, gnome-terminal, konsole, or xterm".to_string()],
+        running: false,
+    };
+    
+    if let Err(e) = app_handle.emit("package-progress", &error_operation) {
+        eprintln!("Failed to emit package progress: {}", e);
+    }
+    
+    Err("No suitable terminal emulator found".to_string())
+}
+
+// Package management commands
+#[tauri::command]
+async fn detect_aur_helper() -> Result<String, String> {
+    // Check for available AUR helpers in order of preference
+    let helpers = ["yay", "paru"];
+    
+    for helper in &helpers {
+        if Command::new("which")
+            .arg(helper)
+            .output()
+            .map(|output| output.status.success())
+            .unwrap_or(false)
+        {
+            return Ok(helper.to_string());
+        }
+    }
+    
+    // Fallback to pacman
+    Ok("pacman".to_string())
+}
+
+#[tauri::command]
+async fn get_installed_packages() -> Result<Vec<PackageInfo>, String> {
+    let output = Command::new("pacman")
+        .args(["-Qi"])
+        .output()
+        .map_err(|e| format!("Failed to run pacman: {}", e))?;
+
+    if !output.status.success() {
+        return Err("Failed to get installed packages".to_string());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut packages = Vec::new();
+    let mut current_package: Option<PackageInfo> = None;
+
+    for line in stdout.lines() {
+        if line.starts_with("Name            : ") {
+            if let Some(pkg) = current_package.take() {
+                packages.push(pkg);
+            }
+            current_package = Some(PackageInfo {
+                name: line.replace("Name            : ", "").trim().to_string(),
+                version: String::new(),
+                description: String::new(),
+                installed: true,
+                size: None,
+                repo: None,
+                updatable: None,
+                new_version: None,
+            });
+        } else if line.starts_with("Version         : ") {
+            if let Some(ref mut pkg) = current_package {
+                pkg.version = line.replace("Version         : ", "").trim().to_string();
+            }
+        } else if line.starts_with("Description     : ") {
+            if let Some(ref mut pkg) = current_package {
+                pkg.description = line.replace("Description     : ", "").trim().to_string();
+            }
+        } else if line.starts_with("Installed Size  : ") {
+            if let Some(ref mut pkg) = current_package {
+                pkg.size = Some(line.replace("Installed Size  : ", "").trim().to_string());
+            }
+        } else if line.starts_with("Repository      : ") {
+            if let Some(ref mut pkg) = current_package {
+                pkg.repo = Some(line.replace("Repository      : ", "").trim().to_string());
+            }
+        }
+    }
+
+    if let Some(pkg) = current_package {
+        packages.push(pkg);
+    }
+
+    Ok(packages)
+}
+
+#[tauri::command]
+async fn search_packages(query: String, helper: String) -> Result<Vec<PackageInfo>, String> {
+    let (cmd, args) = match helper.as_str() {
+        "yay" => ("yay", vec!["-Ss", &query]),
+        "paru" => ("paru", vec!["-Ss", &query]),
+        _ => ("pacman", vec!["-Ss", &query]),
+    };
+
+    let output = Command::new(cmd)
+        .args(args)
+        .output()
+        .map_err(|e| format!("Failed to run {}: {}", cmd, e))?;
+
+    if !output.status.success() {
+        return Err(format!("Failed to search packages with {}", cmd));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut packages = Vec::new();
+    let lines: Vec<&str> = stdout.lines().collect();
+    
+    let mut i = 0;
+    while i < lines.len() {
+        let line = lines[i];
+        if line.contains('/') && !line.trim().is_empty() {
+            // Parse package line: "repo/package-name version [status]"
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let name_parts: Vec<&str> = parts[0].split('/').collect();
+                if name_parts.len() == 2 {
+                    let repo = name_parts[0].to_string();
+                    let name = name_parts[1].to_string();
+                    let version = parts[1].to_string();
+                    let installed = line.contains("[installed]");
+                    
+                    // Description is usually on the next line
+                    let description = if i + 1 < lines.len() {
+                        lines[i + 1].trim().to_string()
+                    } else {
+                        String::new()
+                    };
+
+                    packages.push(PackageInfo {
+                        name,
+                        version,
+                        description,
+                        installed,
+                        size: None,
+                        repo: Some(repo),
+                        updatable: None,
+                        new_version: None,
+                    });
+                    
+                    i += 2; // Skip description line
+                    continue;
+                }
+            }
+        }
+        i += 1;
+    }
+
+    Ok(packages)
+}
+
+#[tauri::command]
+async fn get_package_updates(helper: String) -> Result<Vec<PackageInfo>, String> {
+    let (cmd, args) = match helper.as_str() {
+        "yay" => ("yay", vec!["-Qu"]),
+        "paru" => ("paru", vec!["-Qu"]),
+        _ => ("pacman", vec!["-Qu"]),
+    };
+
+    let output = Command::new(cmd)
+        .args(args)
+        .output()
+        .map_err(|e| format!("Failed to run {}: {}", cmd, e))?;
+
+    // pacman -Qu returns non-zero exit code if no updates, which is normal
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut packages = Vec::new();
+
+    for line in stdout.lines() {
+        if !line.trim().is_empty() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 4 {
+                // Format: package current_version -> new_version
+                let name = parts[0].to_string();
+                let current_version = parts[1].to_string();
+                let new_version = parts[3].to_string();
+
+                packages.push(PackageInfo {
+                    name,
+                    version: current_version,
+                    description: String::new(), // Could be enhanced with package descriptions
+                    installed: true,
+                    size: None,
+                    repo: None,
+                    updatable: Some(true),
+                    new_version: Some(new_version),
+                });
+            }
+        }
+    }
+
+    Ok(packages)
+}
+
+async fn run_package_command_with_progress(
+    app_handle: tauri::AppHandle,
+    operation: String,
+    package_name: Option<String>,
+    cmd: &str,
+    args: Vec<&str>,
+) -> Result<(), String> {
+    use std::process::Stdio;
+    use std::io::{BufRead, BufReader};
+
+    // Emit initial progress
+    let initial_operation = PackageOperation {
+        operation: operation.clone(),
+        package_name: package_name.clone(),
+        progress: 0,
+        status: format!("Starting {}...", operation),
+        output: vec![],
+        running: true,
+    };
+    
+    if let Err(e) = app_handle.emit("package-progress", &initial_operation) {
+        eprintln!("Failed to emit package progress: {}", e);
+    }
+
+    // For AUR helpers (yay/paru), run in a terminal window for interactive access
+    if cmd == "yay" || cmd == "paru" {
+        return run_command_in_terminal(app_handle, operation, package_name, cmd, args).await;
+    }
+
+    let mut child = Command::new(cmd)
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start {}: {}", cmd, e))?;
+
+    let stdout = child.stdout.take().unwrap();
+    let stderr = child.stderr.take().unwrap();
+    
+    let stdout_reader = BufReader::new(stdout);
+    let stderr_reader = BufReader::new(stderr);
+    
+    let mut output_lines = Vec::new();
+    let mut progress = 10;
+
+    // Read stdout
+    for line in stdout_reader.lines() {
+        if let Ok(line) = line {
+            output_lines.push(line.clone());
+            progress = std::cmp::min(progress + 5, 90);
+            
+            let operation_update = PackageOperation {
+                operation: operation.clone(),
+                package_name: package_name.clone(),
+                progress,
+                status: format!("Processing {}...", operation),
+                output: output_lines.clone(),
+                running: true,
+            };
+            
+            if let Err(e) = app_handle.emit("package-progress", &operation_update) {
+                eprintln!("Failed to emit package progress: {}", e);
+            }
+        }
+    }
+
+    // Read stderr
+    for line in stderr_reader.lines() {
+        if let Ok(line) = line {
+            output_lines.push(format!("ERROR: {}", line));
+        }
+    }
+
+    let status = child.wait().map_err(|e| format!("Failed to wait for process: {}", e))?;
+
+    // Emit final progress
+    let final_operation = PackageOperation {
+        operation: operation.clone(),
+        package_name: package_name.clone(),
+        progress: 100,
+        status: if status.success() {
+            format!("{} completed successfully", operation)
+        } else {
+            format!("{} failed", operation)
+        },
+        output: output_lines,
+        running: false,
+    };
+    
+    if let Err(e) = app_handle.emit("package-progress", &final_operation) {
+        eprintln!("Failed to emit package progress: {}", e);
+    }
+
+    if !status.success() {
+        return Err(format!("{} failed with exit code: {:?}", operation, status.code()));
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+async fn install_package(
+    app_handle: tauri::AppHandle,
+    package_name: String,
+    helper: String,
+) -> Result<(), String> {
+    let privilege_cmd = get_privilege_command().await;
+    let (cmd, args) = match helper.as_str() {
+        "yay" => ("yay", vec!["-S", "--noconfirm", &package_name]),
+        "paru" => ("paru", vec!["-S", "--noconfirm", &package_name]),
+        _ => (privilege_cmd.as_str(), vec!["pacman", "-S", "--noconfirm", &package_name]),
+    };
+
+    run_package_command_with_progress(
+        app_handle,
+        "install".to_string(),
+        Some(package_name.clone()),
+        cmd,
+        args,
+    ).await
+}
+
+#[tauri::command]
+async fn remove_package(
+    app_handle: tauri::AppHandle,
+    package_name: String,
+) -> Result<(), String> {
+    let privilege_cmd = get_privilege_command().await;
+    run_package_command_with_progress(
+        app_handle,
+        "remove".to_string(),
+        Some(package_name.clone()),
+        &privilege_cmd,
+        vec!["pacman", "-R", "--noconfirm", &package_name],
+    ).await
+}
+
+#[tauri::command]
+async fn update_package(
+    app_handle: tauri::AppHandle,
+    package_name: String,
+    helper: String,
+) -> Result<(), String> {
+    let privilege_cmd = get_privilege_command().await;
+    let (cmd, args) = match helper.as_str() {
+        "yay" => ("yay", vec!["-S", "--noconfirm", &package_name]),
+        "paru" => ("paru", vec!["-S", "--noconfirm", &package_name]),
+        _ => (privilege_cmd.as_str(), vec!["pacman", "-S", "--noconfirm", &package_name]),
+    };
+
+    run_package_command_with_progress(
+        app_handle,
+        "update".to_string(),
+        Some(package_name.clone()),
+        cmd,
+        args,
+    ).await
+}
+
+#[tauri::command]
+async fn system_update(
+    app_handle: tauri::AppHandle,
+    helper: String,
+) -> Result<(), String> {
+    let privilege_cmd = get_privilege_command().await;
+    let (cmd, args) = match helper.as_str() {
+        "yay" => ("yay", vec!["-Syu", "--noconfirm"]),
+        "paru" => ("paru", vec!["-Syu", "--noconfirm"]),
+        _ => (privilege_cmd.as_str(), vec!["pacman", "-Syu", "--noconfirm"]),
+    };
+
+    run_package_command_with_progress(
+        app_handle,
+        "system update".to_string(),
+        None,
+        cmd,
+        args,
+    ).await
+}
+
+#[tauri::command]
+async fn refresh_wifi_networks() -> Result<String, String> {
+    // Use pkexec for WiFi rescan to handle authentication properly
+    let privilege_cmd = get_privilege_command().await;
+    
+    let output = Command::new(&privilege_cmd)
+        .args(["nmcli", "device", "wifi", "rescan"])
+        .output()
+        .map_err(|e| format!("Failed to rescan WiFi networks: {}", e))?;
+    
+    if output.status.success() {
+        Ok("WiFi networks refreshed".to_string())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!("Failed to refresh WiFi networks: {}", stderr))
+    }
 }

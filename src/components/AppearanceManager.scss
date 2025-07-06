@@ -137,57 +137,6 @@
 
   .theme-select {
     width: 100%;
-    padding: 12px 16px;
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-medium);
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    appearance: none;
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 12px;
-    padding-right: 40px;
-    box-shadow: var(--shadow-small);
-
-    // Dark theme arrow
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3e%3cpath fill='%23ffffff' d='M2 0L0 2h4zm0 5L0 3h4z'/%3e%3c/svg%3e");
-
-    &:hover {
-      border-color: var(--border-hover);
-      background-color: var(--bg-hover);
-      box-shadow: var(--shadow-medium);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 0 3px var(--accent-light);
-      background-color: var(--bg-active);
-    }
-
-    option {
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      padding: 8px;
-      border: none;
-      
-      &:hover {
-        background: var(--bg-hover);
-      }
-      
-      &:checked {
-        background: var(--accent-primary);
-        color: white;
-      }
-    }
-  }
-
-  // Light theme arrow
-  [data-theme="light"] & .theme-select {
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3e%3cpath fill='%23202124' d='M2 0L0 2h4zm0 5L0 3h4z'/%3e%3c/svg%3e");
   }
 }
 

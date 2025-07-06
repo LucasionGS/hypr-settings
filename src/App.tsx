@@ -6,12 +6,14 @@ import DisplayManager from './components/DisplayManager';
 import { WifiManager } from './components/WifiManager';
 import { BluetoothManager } from './components/BluetoothManager';
 import { AppearanceManager } from './components/AppearanceManager';
+import { PackageManager } from './components/PackageManager';
 import { HyprlandProvider } from './services/Hyprland';
 import "./App.scss";
 
 const panels: Panel[] = [
   { id: 'display', name: 'Display', icon: '🖥️' },
   { id: 'appearance', name: 'Appearance', icon: '🎨' },
+  { id: 'packages', name: 'Packages', icon: '📦' },
   { id: 'wifi', name: 'Wi-Fi', icon: '📶' },
   { id: 'bluetooth', name: 'Bluetooth', icon: '📘' },
 ];
@@ -122,6 +124,8 @@ function App() {
         );
       case 'appearance':
         return <AppearanceManager />;
+      case 'packages':
+        return <PackageManager />;
       case 'wifi':
         return <WifiManager />;
       case 'bluetooth':

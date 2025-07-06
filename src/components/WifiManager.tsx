@@ -64,6 +64,23 @@ export const WifiManager: React.FC = () => {
     }
   };
 
+  const refreshNetworks = async () => {
+    setLoading(true);
+    try {
+      // Trigger a manual rescan with authentication
+      await invoke('refresh_wifi_networks');
+      // Wait a moment for the scan to complete, then fetch networks
+      setTimeout(async () => {
+        await fetchNetworks();
+        setLoading(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to refresh WiFi networks:', err);
+      setError(err as string);
+      setLoading(false);
+    }
+  };
+
   const refreshData = async () => {
     setLoading(true);
     setError(null);
@@ -226,7 +243,7 @@ export const WifiManager: React.FC = () => {
           >
             {wifiStatus?.enabled ? 'Disable Wi-Fi' : 'Enable Wi-Fi'}
           </button>
-          <button className="refresh-button" onClick={refreshData}>
+          <button className="refresh-button" onClick={refreshNetworks}>
             <IconRefresh size={16} /> Refresh
           </button>
         </div>

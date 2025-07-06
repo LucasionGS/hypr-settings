@@ -29,8 +29,9 @@ body {
   color: white;
 }
 
-// Default styles for inputs
+// Default styles for inputs, selects, and buttons
 input,
+select,
 button {
   border-radius: var(--radius-medium);
   border: 1px solid var(--border-color);
@@ -44,26 +45,51 @@ button {
   box-shadow: var(--shadow-small);
 }
 
-button {
+// Enhanced select styling
+select {
   cursor: pointer;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+  padding-right: 40px;
+
+  // Dark theme arrow (default)
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3e%3cpath fill='%23ffffff' d='M2 0L0 2h4zm0 5L0 3h4z'/%3e%3c/svg%3e");
 
   &:hover {
-    background-color: var(--bg-hover);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-medium);
     border-color: var(--border-hover);
+    background-color: var(--bg-hover);
+    box-shadow: var(--shadow-medium);
   }
 
-  &:active {
-    transform: translateY(0);
+  &:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px var(--accent-light);
+    background-color: var(--bg-active);
+  }
+
+  option {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    padding: 8px;
+    border: none;
+
+    &:hover {
+      background: var(--bg-hover);
+    }
+
+    &:checked {
+      background: var(--accent-primary);
+      color: white;
+    }
   }
 }
 
-input:focus,
-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--accent-light);
-  border-color: var(--accent-primary);
+// Light theme arrow for selects
+[data-theme="light"] select {
+  background-image: url("data:image/svg+xml;charset=US-ASCII,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'%3e%3cpath fill='%23202124' d='M2 0L0 2h4zm0 5L0 3h4z'/%3e%3c/svg%3e");
 }
 
 // Scrollbar styles
