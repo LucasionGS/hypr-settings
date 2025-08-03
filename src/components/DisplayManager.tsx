@@ -412,6 +412,23 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
     updateMonitor(updatedMonitor);
   };
 
+  const handleScaleChange = (scale: number) => {
+    if (!selectedMonitor) return;
+    
+    // Clamp scale between reasonable values (0.25x to 3.0x)
+    const clampedScale = Math.max(0.25, Math.min(3.0, scale));
+    
+    // Round to 2 decimal places to avoid floating point precision issues
+    const roundedScale = Math.round(clampedScale * 100) / 100;
+    
+    const updatedMonitor = {
+      ...selectedMonitor,
+      scale: roundedScale
+    };
+    
+    updateMonitor(updatedMonitor);
+  };
+
   const handleSave = async () => {
     try {
       await saveConfiguration();
@@ -636,7 +653,23 @@ const DisplayManager: React.FC<DisplayManagerProps> = () => {
 
                 <div className="setting-row">
                   <label>Scale</label>
-                  <span>{selectedMonitor.scale}x</span>
+                  <select 
+                    value={selectedMonitor.scale}
+                    onChange={(e) => handleScaleChange(Number(e.target.value))}
+                  >
+                    <option value="0.25">0.25×</option>
+                    <option value="0.5">0.5×</option>
+                    <option value="0.75">0.75×</option>
+                    <option value="1">1.0×</option>
+                    <option value="1.25">1.25×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="1.75">1.75×</option>
+                    <option value="2">2.0×</option>
+                    <option value="2.25">2.25×</option>
+                    <option value="2.5">2.5×</option>
+                    <option value="2.75">2.75×</option>
+                    <option value="3">3.0×</option>
+                  </select>
                 </div>
               </div>
             </>
